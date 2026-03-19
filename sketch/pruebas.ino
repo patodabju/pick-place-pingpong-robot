@@ -20,6 +20,21 @@ void centerAll() {
   servo7.write(90);
 }
 
+void testServo(Servo &s) {
+  s.write(90);
+  delay(1000);
+
+  s.write(80);
+  delay(1000);
+  s.write(90);
+  delay(1000);
+
+  s.write(100);
+  delay(1000);
+  s.write(90);
+  delay(1000);
+}
+
 void setup() {
   servo1.attach(servoPins[0]);
   servo2.attach(servoPins[1]);
@@ -30,65 +45,17 @@ void setup() {
   servo7.attach(servoPins[6]);
 
   centerAll();
-  delay(3000);
+  delay(4000);
 }
 
 void loop() {
-  // Servo 1
-  servo1.write(75);
-  delay(1200);
-  servo1.write(105);
-  delay(1200);
-  servo1.write(90);
-  delay(800);
-
-  // Servo 2
-  servo2.write(75);
-  delay(1200);
-  servo2.write(105);
-  delay(1200);
-  servo2.write(90);
-  delay(800);
-
-  // Servo 3
-  servo3.write(75);
-  delay(1200);
-  servo3.write(105);
-  delay(1200);
-  servo3.write(90);
-  delay(800);
-
-  // Servo 4
-  servo4.write(75);
-  delay(1200);
-  servo4.write(105);
-  delay(1200);
-  servo4.write(90);
-  delay(800);
-
-  // Servo 5
-  servo5.write(75);
-  delay(1200);
-  servo5.write(105);
-  delay(1200);
-  servo5.write(90);
-  delay(800);
-
-  // Servo 6
-  servo6.write(75);
-  delay(1200);
-  servo6.write(105);
-  delay(1200);
-  servo6.write(90);
-  delay(800);
-
-  // Servo 7
-  servo7.write(75);
-  delay(1200);
-  servo7.write(105);
-  delay(1200);
-  servo7.write(90);
-  delay(800);
+  testServo(servo1);
+  testServo(servo2);
+  testServo(servo3);
+  testServo(servo4);
+  testServo(servo5);
+  testServo(servo6);
+  testServo(servo7);
 
   delay(2000);
 }
