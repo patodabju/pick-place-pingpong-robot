@@ -1,49 +1,62 @@
 #include <Servo.h>
 
-Servo servo1;
-Servo servo2;
-Servo servo3;
-Servo servo4;
-Servo servo5;
-Servo servo6;
-Servo servo7;
+Servo s1, s2, s3, s4, s5, s6, s7;
 
-const int servoPins[7] = {3, 4, 5, 6, 9, 10, 11};
+// Pines
+const int pins[7] = {3, 4, 5, 6, 9, 10, 11};
+
+// Índices para claridad
+#define BASE 0
+#define A1   1
+#define A2   2
+#define B    3
+#define W1   4
+#define W2   5
+#define GRIP 6
+
+void attachAll() {
+  s1.attach(pins[BASE]);
+  s2.attach(pins[A1]);
+  s3.attach(pins[A2]);
+  s4.attach(pins[B]);
+  s5.attach(pins[W1]);
+  s6.attach(pins[W2]);
+  s7.attach(pins[GRIP]);
+}
 
 void moveAll(int angle) {
-  servo1.write(angle);
-  servo2.write(angle);
-  servo3.write(angle);
-  servo4.write(angle);
-  servo5.write(angle);
-  servo6.write(angle);
-  servo7.write(angle);
+  // Base
+  s1.write(angle);
+
+  // 🔥 A1 y A2 acoplados (espejo)
+  s2.write(angle);           // A1
+  s3.write(180 - angle);     // A2
+
+  // Resto
+  s4.write(angle);
+  s5.write(angle);
+  s6.write(angle);
+  s7.write(angle);
 }
 
 void setup() {
-  servo1.attach(servoPins[0]);
-  servo2.attach(servoPins[1]);
-  servo3.attach(servoPins[2]);
-  servo4.attach(servoPins[3]);
-  servo5.attach(servoPins[4]);
-  servo6.attach(servoPins[5]);
-  servo7.attach(servoPins[6]);
+  attachAll();
 
-  // Todos al centro
+  // Centro
   moveAll(90);
   delay(3000);
 }
 
 void loop() {
-  // +30° (máximo seguro)
-  moveAll(120);
+  // +20°
+  moveAll(110);
   delay(3000);
 
-  // -30°
-  moveAll(60);
+  // -20°
+  moveAll(70);
   delay(3000);
 
-  // Regresar a centro
+  // Centro
   moveAll(90);
   delay(3000);
 }
