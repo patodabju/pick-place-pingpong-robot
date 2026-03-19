@@ -1,35 +1,26 @@
-#include <Servo.h>
-
-Servo s;
-
-// 🔧 CAMBIA ESTE PIN para probar cada servo
-const int SERVO_PIN = 3;
-
-int angle = 90;
-
 void setup() {
-  Serial.begin(9600);
-  s.attach(SERVO_PIN);
-
-  s.write(angle);
-
-  Serial.println("Servo listo.");
-  Serial.println("Escribe un angulo entre 0 y 180:");
+  pinMode(9, OUTPUT);   // 🔧 usa el pin 9 (Wrist A por ejemplo)
 }
 
 void loop() {
-  if (Serial.available()) {
-    int newAngle = Serial.parseInt();
+  // 🔵 Centro (~90°)
+  digitalWrite(9, HIGH);
+  delayMicroseconds(1500);
+  digitalWrite(9, LOW);
+  delayMicroseconds(18500);
+  delay(2000);
 
-    // Validación básica
-    if (newAngle >= 0 && newAngle <= 180) {
-      angle = newAngle;
-      s.write(angle);
+  // 🔴 Lado 1 (~60°)
+  digitalWrite(9, HIGH);
+  delayMicroseconds(1200);
+  digitalWrite(9, LOW);
+  delayMicroseconds(18800);
+  delay(2000);
 
-      Serial.print("Moviendo a: ");
-      Serial.println(angle);
-    } else {
-      Serial.println("Angulo invalido (0-180)");
-    }
-  }
+  // 🟢 Lado 2 (~120°)
+  digitalWrite(9, HIGH);
+  delayMicroseconds(1800);
+  digitalWrite(9, LOW);
+  delayMicroseconds(18200);
+  delay(2000);
 }
