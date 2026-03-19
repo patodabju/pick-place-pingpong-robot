@@ -21,16 +21,15 @@ def open_camera(camera_index=0, width=640, height=360):
 
 
 def main():
-    camera_index = 2
+    camera_index = 1  # laptop (ajústalo a 2 en UNO Q)
 
     cap = open_camera(camera_index)
 
     if cap is None:
-        print(f"Error: no se pudo abrir la cámara con índice {camera_index}")
+        print("Error al abrir cámara")
         return
 
-    print("Cámara abierta correctamente (modo headless)")
-    print("Leyendo frames... (Ctrl+C para salir)")
+    print("Cámara OK - iniciando captura + HSV")
 
     frame_count = 0
     start_time = time.time()
@@ -40,19 +39,25 @@ def main():
             ret, frame = cap.read()
 
             if not ret:
-                print("Error al leer frame")
+                print("Error leyendo frame")
                 break
+
+            # 🔥 NUEVO: conversión a HSV
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             frame_count += 1
 
-            # Cada 30 frames mostramos info (debug)
             if frame_count % 30 == 0:
                 elapsed = time.time() - start_time
                 fps = frame_count / elapsed
-                print(f"FPS aproximado: {fps:.2f}")
+
+                print(f"FPS: {fps:.2f}")
+                print(f"Frame shape: {frame.shape}")
+                print(f"HSV shape: {hsv.shape}")
+                print("-----")
 
     except KeyboardInterrupt:
-        print("Interrupción manual")
+        print("Stop manual")
 
     cap.release()
 
