@@ -1,5 +1,26 @@
-Activating python virtual environment
+======== App is starting ============================
+- Local URL:   http://localhost:7000
+- Network URL: http://192.168.100.133:7000
+2026-03-19 03:14:17.092 INFO - [MainThread] V4LCamera:  Starting camera...
+2026-03-19 03:14:17.235 WARNING - [MainThread] V4LCamera:  Camera HiCamera: UVC Camera resolution set to 640x360 instead of requested 640x480
+2026-03-19 03:14:17.241 WARNING - [MainThread] V4LCamera:  Camera HiCamera: UVC Camera FPS set to 30 instead of requested 10
+2026-03-19 03:14:17.495 INFO - [MainThread] V4LCamera:  Successfully started HiCamera: UVC Camera
+2026-03-19 03:14:17.499 INFO - [MainThread] App:  App started
+2026-03-19 03:14:17.589 ERROR - [VideoObjectDetection.object_dete] VideoObjectDetection:  Failed to establish WebSocket connection to ei-video-obj-detection-runner: [Errno -2] Name or service not known
 Traceback (most recent call last):
-File "/app/python/main.py", line 1, in <module>
-from arduino import App
-ImportError: cannot import name 'App' from 'arduino' (unknown location)
+File "/usr/local/lib/python3.13/site-packages/arduino/app_bricks/video_objectdetection/__init__.py", line 139, in object_detection_loop
+with connect(self._uri) as ws:
+~~~~~~~^^^^^^^^^^^
+File "/usr/local/lib/python3.13/site-packages/websockets/sync/client.py", line 324, in connect
+sock = socket.create_connection(
+(ws_uri.host, ws_uri.port),
+**kwargs,
+)
+File "/usr/local/lib/python3.13/socket.py", line 840, in create_connection
+for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/usr/local/lib/python3.13/socket.py", line 977, in getaddrinfo
+for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -2] Name or service not known
+2026-03-19 03:14:19.634 ERROR - [VideoObjectDetection.object_dete] VideoObjectDetection:  Failed to establish WebSocket connection to ei-video-obj-detection-runner: [Errno -2] Name or service not known
