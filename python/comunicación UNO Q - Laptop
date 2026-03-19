@@ -1,0 +1,60 @@
+Starting app "Pick & Place Robot"
+Sketch profile configured: Name="default", Port=""
+The library Servo has been automatically added from sketch project.
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:3:7: error: 'Servo A1' redeclared as different kind of entity
+3 | Servo A1;
+|       ^~
+In file included from /home/arduino/ArduinoApps/pick-and-place-robot/.cache/sketch/sketch/sketch.ino.cpp:1:
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/cores/arduino/Arduino.h:105:9: note: previous declaration 'analogPins A1'
+105 |         A##i = DIGITAL_PIN_GPIOS_FIND_PIN(DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),  \
+|         ^
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/variants/arduino_uno_q_stm32u585xx/llext-edk/include/zephyr/include/generated/zephyr/devicetree_generated.h:14880:9: note: in expansion of macro 'AN_ENUMS'
+14880 |         fn(DT_N_S_zephyr_user, adc_pin_gpios, 1) \
+|         ^~
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/variants/arduino_uno_q_stm32u585xx/llext-edk/include/zephyr/include/zephyr/devicetree.h:5371:33: note: in expansion of macro 'DT_N_S_zephyr_user_P_adc_pin_gpios_FOREACH_PROP_ELEM'
+5371 | #define DT_CAT4(a1, a2, a3, a4) a1 ## a2 ## a3 ## a4
+|                                 ^~
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/cores/arduino/Arduino.h:109:9: note: in expansion of macro 'DT_FOREACH_PROP_ELEM'
+109 |         DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, AN_ENUMS)
+|         ^~~~~~~~~~~~~~~~~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:4:7: error: 'Servo A2' redeclared as different kind of entity
+4 | Servo A2;
+|       ^~
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/cores/arduino/Arduino.h:105:9: note: previous declaration 'analogPins A2'
+105 |         A##i = DIGITAL_PIN_GPIOS_FIND_PIN(DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),  \
+|         ^
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/variants/arduino_uno_q_stm32u585xx/llext-edk/include/zephyr/include/generated/zephyr/devicetree_generated.h:14881:9: note: in expansion of macro 'AN_ENUMS'
+14881 |         fn(DT_N_S_zephyr_user, adc_pin_gpios, 2) \
+|         ^~
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/variants/arduino_uno_q_stm32u585xx/llext-edk/include/zephyr/include/zephyr/devicetree.h:5371:33: note: in expansion of macro 'DT_N_S_zephyr_user_P_adc_pin_gpios_FOREACH_PROP_ELEM'
+5371 | #define DT_CAT4(a1, a2, a3, a4) a1 ## a2 ## a3 ## a4
+|                                 ^~
+/home/arduino/.arduino15/packages/arduino/hardware/zephyr/0.53.1/cores/arduino/Arduino.h:109:9: note: in expansion of macro 'DT_FOREACH_PROP_ELEM'
+109 |         DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, AN_ENUMS)
+|         ^~~~~~~~~~~~~~~~~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino: In function 'void setup()':
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:7:6: error: request for member 'attach' in 'A1', which is of non-class type 'analogPins'
+7 |   A1.attach(4);   // 🔧 cambia si tu A1 está en otro pin
+|      ^~~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:8:6: error: request for member 'attach' in 'A2', which is of non-class type 'analogPins'
+8 |   A2.attach(5);   // 🔧 cambia si tu A2 está en otro pin
+|      ^~~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino: In function 'void loop()':
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:13:6: error: request for member 'write' in 'A1', which is of non-class type 'analogPins'
+13 |   A1.write(90);
+|      ^~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:14:6: error: request for member 'write' in 'A2', which is of non-class type 'analogPins'
+14 |   A2.write(90);
+|      ^~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:18:6: error: request for member 'write' in 'A1', which is of non-class type 'analogPins'
+18 |   A1.write(60);
+|      ^~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:19:6: error: request for member 'write' in 'A2', which is of non-class type 'analogPins'
+19 |   A2.write(120);   // 🔥 esclavizado inverso
+|      ^~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:23:6: error: request for member 'write' in 'A1', which is of non-class type 'analogPins'
+23 |   A1.write(120);
+|      ^~~~~
+/home/arduino/ArduinoApps/pick-and-place-robot/sketch/sketch.ino:24:6: error: request for member 'write' in 'A2', which is of non-class type 'analogPins'
+24 |   A2.write(60);    // 🔥 esclavizado inverso
+|      ^~~~~
