@@ -1,26 +1,18 @@
+#include <Servo.h>
+
+Servo s;
+
 void setup() {
-  pinMode(9, OUTPUT);   // 🔧 usa el pin 9 (Wrist A por ejemplo)
+  s.attach(9);   // 🔧 mismo pin que ya funcionó
 }
 
 void loop() {
-  // 🔵 Centro (~90°)
-  digitalWrite(9, HIGH);
-  delayMicroseconds(1500);
-  digitalWrite(9, LOW);
-  delayMicroseconds(18500);
+  s.write(90);   // centro
   delay(2000);
 
-  // 🔴 Lado 1 (~60°)
-  digitalWrite(9, HIGH);
-  delayMicroseconds(1200);
-  digitalWrite(9, LOW);
-  delayMicroseconds(18800);
+  s.write(60);   // lado 1
   delay(2000);
 
-  // 🟢 Lado 2 (~120°)
-  digitalWrite(9, HIGH);
-  delayMicroseconds(1800);
-  digitalWrite(9, LOW);
-  delayMicroseconds(18200);
+  s.write(120);  // lado 2
   delay(2000);
 }
