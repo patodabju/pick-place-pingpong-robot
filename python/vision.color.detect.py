@@ -1,11 +1,11 @@
 import cv2
 import platform
+import time
 
 
 def open_camera(camera_index=0, width=640, height=360):
     system_name = platform.system()
 
-    # Selección de backend según sistema operativo
     if system_name == "Windows":
         cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
     else:
@@ -21,32 +21,40 @@ def open_camera(camera_index=0, width=640, height=360):
 
 
 def main():
-    camera_index = 2   # En tu UNO Q ya comprobaste que este índice funciona
+    camera_index = 2
 
-    cap = open_camera(camera_index=camera_index, width=640, height=360)
+    cap = open_camera(camera_index)
 
     if cap is None:
-        print(f"Error: no se pudo abrir la cámara con índice {camera_index}.")
+        print(f"Error: no se pudo abrir la cámara con índice {camera_index}")
         return
 
-    print(f"Cámara abierta correctamente con índice {camera_index}.")
-    print("Presiona 'q' para salir.")
+    print("Cámara abierta correctamente (modo headless)")
+    print("Leyendo frames... (Ctrl+C para salir)")
 
-    while True:
-        ret, frame = cap.read()
+    frame_count = 0
+    start_time = time.time()
 
-        if not ret:
-            print("Error: no se pudo leer un frame de la cámara.")
-            break
+    try:
+        while True:
+            ret, frame = cap.read()
 
-        cv2.imshow("Camera Feed", frame)
+            if not ret:
+                print("Error al leer frame")
+                break
 
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
+            frame_count += 1
+
+            # Cada 30 frames mostramos info (debug)
+            if frame_count % 30 == 0:
+                elapsed = time.time() - start_time
+                fps = frame_count / elapsed
+                print(f"FPS aproximado: {fps:.2f}")
+
+    except KeyboardInterrupt:
+        print("Interrupción manual")
 
     cap.release()
-    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
