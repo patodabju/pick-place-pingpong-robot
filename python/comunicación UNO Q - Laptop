@@ -1,5 +1,5 @@
 Activating python virtual environment
-File "/app/python/main.py", line 14
-padding: 24px;
-^
-SyntaxError: invalid decimal literal
+Traceback (most recent call last):
+File "/app/python/main.py", line 1, in <module>
+from arduino import App
+ImportError: cannot import name 'App' from 'arduino' (unknown location)
