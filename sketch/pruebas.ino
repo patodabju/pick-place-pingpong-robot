@@ -1,18 +1,26 @@
 #include <Servo.h>
 
-Servo s;
+Servo A1;
+Servo A2;
 
 void setup() {
-  s.attach(8);   // 🔧 solo usamos el pin 9
+  A1.attach(4);   // 🔧 cambia si tu A1 está en otro pin
+  A2.attach(5);   // 🔧 cambia si tu A2 está en otro pin
 }
 
 void loop() {
-  s.write(90);   // centro
+  // Centro
+  A1.write(90);
+  A2.write(90);
   delay(2000);
 
-  s.write(60);   // lado 1
+  // Movimiento hacia un lado
+  A1.write(60);
+  A2.write(120);   // 🔥 esclavizado inverso
   delay(2000);
 
-  s.write(120);  // lado 2
+  // Movimiento hacia el otro lado
+  A1.write(120);
+  A2.write(60);    // 🔥 esclavizado inverso
   delay(2000);
 }
