@@ -3,7 +3,7 @@
 Servo s;
 
 void setup() {
-  s.attach(9);   // 🔧 mismo pin que ya funcionó
+  s.attach(9);   // 🔧 solo usamos el pin 9
 }
 
 void loop() {
