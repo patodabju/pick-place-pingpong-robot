@@ -1,53 +1,51 @@
 #include <Servo.h>
 
-Servo s1, s2, s3, s4, s5, s6, s7;
-
-// Pines
-const int pins[7] = {3, 4, 5, 6, 9, 10, 11};
-
-// Índices para claridad
-#define BASE 0
-#define A1   1
-#define A2   2
-#define B    3
-#define W1   4
-#define W2   5
-#define GRIP 6
+// Servos
+Servo baseServo;     // pin 3
+Servo servoA1;       // pin 4
+Servo servoA2;       // pin 5
+Servo servoB;        // pin 6
+Servo wristA;        // pin 9
+Servo wristB;        // pin 10
+Servo gripper;       // pin 11
 
 void attachAll() {
-  s1.attach(pins[BASE]);
-  s2.attach(pins[A1]);
-  s3.attach(pins[A2]);
-  s4.attach(pins[B]);
-  s5.attach(pins[W1]);
-  s6.attach(pins[W2]);
-  s7.attach(pins[GRIP]);
+  baseServo.attach(3);
+  servoA1.attach(4);
+  servoA2.attach(5);
+  servoB.attach(6);
+  wristA.attach(9);
+  wristB.attach(10);
+  gripper.attach(11);
 }
 
+// Función para mover todo
 void moveAll(int angle) {
-  // Base
-  s1.write(angle);
 
-  // 🔥 A1 y A2 acoplados (espejo)
-  s2.write(angle);           // A1
-  s3.write(180 - angle);     // A2
+  // Base
+  baseServo.write(angle);
+
+  // 🔥 A1 y A2 acoplados
+  servoA1.write(angle);
+  servoA2.write(180 - angle);
 
   // Resto
-  s4.write(angle);
-  s5.write(angle);
-  s6.write(angle);
-  s7.write(angle);
+  servoB.write(angle);
+  wristA.write(angle);
+  wristB.write(angle);
+  gripper.write(angle);
 }
 
 void setup() {
   attachAll();
 
-  // Centro
+  // Centro inicial
   moveAll(90);
   delay(3000);
 }
 
 void loop() {
+
   // +20°
   moveAll(110);
   delay(3000);
