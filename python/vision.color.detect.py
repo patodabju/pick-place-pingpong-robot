@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import platform
 import time
+import math
 
 
 # ==========================================================
@@ -20,7 +21,6 @@ WORKSPACE_HEIGHT_CM = 24.6
 WARP_SCALE = 20
 
 # La máscara del workspace se erosiona hacia adentro
-# para no detectar tape ni bordes internos
 WORKSPACE_INSET_PX = 10
 
 # Filtros geométricos de pelotas
@@ -30,20 +30,41 @@ MIN_CIRCULARITY = 0.45
 MIN_ASPECT_RATIO = 0.55
 MAX_ASPECT_RATIO = 1.45
 
+# Prioridad de colores para selección automática
+# Menor valor = mayor prioridad
+COLOR_PRIORITY = {
+    "orange": 0,
+    "blue": 1,
+    "white": 2,
+}
+
+# Si quieres ignorar prioridad y elegir solo por distancia, pon False
+USE_COLOR_PRIORITY = False
+
 # --------------------------
 # Rangos HSV
 # --------------------------
-# Naranja
 LOWER_ORANGE = np.array([5, 100, 100])
 UPPER_ORANGE = np.array([20, 255, 255])
 
-# Azul baby-shower / cielo
 LOWER_BLUE = np.array([85, 80, 80])
 UPPER_BLUE = np.array([115, 255, 255])
 
-# Blanco (ajuste conservador)
 LOWER_WHITE = np.array([0, 0, 200])
 UPPER_WHITE = np.array([179, 40, 255])
+
+
+# ==========================================================
+# CONFIGURACIÓN BASE DEL ROBOT (placeholder)
+# ==========================================================
+robot_config = {
+    "num_joints": 3,
+    "link_lengths_cm": [12.0, 14.0, 8.0],
+    "z_pick_cm": 0.0,
+    "z_approach_cm": 6.0,
+    "z_place_cm": 6.0,
+    "home_angles_deg": [90.0, 90.0, 90.0],
+}
 
 
 # ==========================================================
@@ -102,12 +123,8 @@ def order_points(pts):
 # DETECCIÓN DEL WORKSPACE
 # ==========================================================
 def detect_workspace(frame):
-    """
-    Detecta el área útil como la mayor región oscura interior.
-    """
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Detectar zona negra / oscura
     _, dark_mask = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY_INV)
 
     kernel = np.ones((7, 7), np.uint8)
@@ -137,7 +154,6 @@ def detect_workspace(frame):
             workspace_quad = approx.reshape(4, 2)
             break
 
-    # Si no encuentra 4 puntos limpios, usa rectángulo mínimo
     if workspace_quad is None:
         cnt = contours[0]
         rect = cv2.minAreaRect(cnt)
@@ -176,18 +192,15 @@ def draw_workspace_overlay(frame, workspace):
     out = frame.copy()
     corners = workspace["corners"].astype(int)
 
-    # Contorno
     cv2.polylines(out, [corners], isClosed=True, color=(0, 255, 0), thickness=2)
 
-    # Etiquetas de esquinas
     labels = ["TL", "TR", "BR", "BL"]
     for pt, label in zip(corners, labels):
         cv2.circle(out, tuple(pt), 6, (0, 255, 255), -1)
         cv2.putText(out, label, (pt[0] + 5, pt[1] - 5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
-    # Origen = esquina inferior izquierda (BL)
-    origin = tuple(corners[3])
+    origin = tuple(corners[3])  # BL
     cv2.circle(out, origin, 8, (0, 0, 255), -1)
     cv2.putText(out, "Origin (0,0)", (origin[0] + 10, origin[1] - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
@@ -267,9 +280,7 @@ def get_all_objects(mask, min_area=250, max_area=50000,
             "aspect_ratio": aspect_ratio,
         })
 
-    # Orden: de arriba hacia abajo y luego de izquierda a derecha
     objects = sorted(objects, key=lambda obj: (obj["center"][1], obj["center"][0]))
-
     return objects
 
 
@@ -280,7 +291,6 @@ def process_colors(frame, workspace_mask=None):
     mask_white = cv2.inRange(hsv, LOWER_WHITE, UPPER_WHITE)
     mask_blue = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
 
-    # Limitar detección al workspace útil
     if workspace_mask is not None:
         mask_orange = cv2.bitwise_and(mask_orange, workspace_mask)
         mask_white = cv2.bitwise_and(mask_white, workspace_mask)
@@ -331,12 +341,6 @@ def process_colors(frame, workspace_mask=None):
 # CONVERSIÓN PIXEL -> COORDENADAS REALES
 # ==========================================================
 def pixel_to_workspace_cm(point_xy, H, warp_h):
-    """
-    Convierte un punto del frame original a coordenadas reales del workspace.
-    Origen del workspace: esquina inferior izquierda.
-    X crece hacia la derecha.
-    Y crece hacia arriba.
-    """
     if H is None or warp_h is None:
         return None
 
@@ -358,15 +362,96 @@ def attach_workspace_coordinates(objects, H, warp_h):
     for obj in objects:
         obj_copy = obj.copy()
         coords_cm = pixel_to_workspace_cm(obj["center"], H, warp_h)
-
-        if coords_cm is not None:
-            obj_copy["workspace_cm"] = coords_cm
-        else:
-            obj_copy["workspace_cm"] = None
-
+        obj_copy["workspace_cm"] = coords_cm
         enriched.append(obj_copy)
 
     return enriched
+
+
+# ==========================================================
+# UNIFICACIÓN Y SELECCIÓN DE OBJETIVOS
+# ==========================================================
+def build_target_list(color_data):
+    targets = []
+
+    for obj in color_data["orange_objects"]:
+        targets.append({
+            "color": "orange",
+            "pixel_center": obj["center"],
+            "workspace_cm": obj.get("workspace_cm"),
+            "area": obj["area"],
+            "bbox": obj["bbox"],
+            "contour": obj["contour"],
+        })
+
+    for obj in color_data["blue_objects"]:
+        targets.append({
+            "color": "blue",
+            "pixel_center": obj["center"],
+            "workspace_cm": obj.get("workspace_cm"),
+            "area": obj["area"],
+            "bbox": obj["bbox"],
+            "contour": obj["contour"],
+        })
+
+    for obj in color_data["white_objects"]:
+        targets.append({
+            "color": "white",
+            "pixel_center": obj["center"],
+            "workspace_cm": obj.get("workspace_cm"),
+            "area": obj["area"],
+            "bbox": obj["bbox"],
+            "contour": obj["contour"],
+        })
+
+    return targets
+
+
+def select_target(targets, use_color_priority=False, color_priority=None):
+    if not targets:
+        return None
+
+    valid_targets = [t for t in targets if t["workspace_cm"] is not None]
+    if not valid_targets:
+        return None
+
+    if use_color_priority and color_priority is not None:
+        valid_targets = sorted(
+            valid_targets,
+            key=lambda t: (
+                color_priority.get(t["color"], 999),
+                math.hypot(t["workspace_cm"][0], t["workspace_cm"][1])
+            )
+        )
+    else:
+        valid_targets = sorted(
+            valid_targets,
+            key=lambda t: math.hypot(t["workspace_cm"][0], t["workspace_cm"][1])
+        )
+
+    return valid_targets[0]
+
+
+# ==========================================================
+# IK PLACEHOLDER
+# ==========================================================
+def inverse_kinematics(target_xy_cm, config):
+    """
+    Placeholder para IK.
+    target_xy_cm: (x_cm, y_cm)
+    config: robot_config
+    """
+    if target_xy_cm is None:
+        return None
+
+    # Aquí irá la IK real más adelante
+    return {
+        "target_xy_cm": target_xy_cm,
+        "num_joints": config["num_joints"],
+        "link_lengths_cm": config["link_lengths_cm"],
+        "joint_angles_deg": None,
+        "status": "IK not implemented yet"
+    }
 
 
 # ==========================================================
@@ -399,14 +484,37 @@ def draw_objects_overlay(frame, objects, label_prefix, color_bgr):
     return out
 
 
-def build_annotated_frame(frame, workspace, color_data):
+def draw_selected_target(frame, target):
+    if target is None:
+        return frame
+
+    out = frame.copy()
+    x, y, w, h = target["bbox"]
+    cx, cy = target["pixel_center"]
+
+    cv2.rectangle(out, (x, y), (x + w, y + h), (0, 0, 255), 3)
+    cv2.circle(out, (cx, cy), 8, (0, 0, 255), -1)
+
+    if target["workspace_cm"] is not None:
+        x_cm, y_cm = target["workspace_cm"]
+        txt = f"TARGET {target['color']} ({x_cm:.1f},{y_cm:.1f}) cm"
+    else:
+        txt = f"TARGET {target['color']}"
+
+    cv2.putText(out, txt, (x, y + h + 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+    return out
+
+
+def build_annotated_frame(frame, workspace, color_data, selected_target=None):
     annotated = frame.copy()
 
     annotated = draw_workspace_overlay(annotated, workspace)
-
     annotated = draw_objects_overlay(annotated, color_data["orange_objects"], "Orange_", (0, 165, 255))
     annotated = draw_objects_overlay(annotated, color_data["white_objects"], "White_", (255, 255, 255))
     annotated = draw_objects_overlay(annotated, color_data["blue_objects"], "Blue_", (255, 0, 0))
+    annotated = draw_selected_target(annotated, selected_target)
 
     return annotated
 
@@ -427,6 +535,22 @@ def print_object_list(title, objects):
             print(f"  {title}_{i}: px=({cx},{cy}) area={area:.1f}")
 
 
+def print_selected_target(target):
+    if target is None:
+        print("Selected target: None")
+        return
+
+    print("Selected target:")
+    print(f"  color: {target['color']}")
+    print(f"  pixel_center: {target['pixel_center']}")
+
+    if target["workspace_cm"] is not None:
+        x_cm, y_cm = target["workspace_cm"]
+        print(f"  workspace_cm: ({x_cm:.2f}, {y_cm:.2f})")
+
+    print(f"  area: {target['area']:.1f}")
+
+
 # ==========================================================
 # MAIN
 # ==========================================================
@@ -438,69 +562,91 @@ def main():
         return
 
     print("Cámara abierta correctamente.")
-    print("Detectando workspace y todas las pelotas...")
+    print("Detectando workspace, múltiples pelotas y objetivo automático...")
     if SHOW_WINDOWS:
         print("Presiona 'q' para salir.")
 
     start_time = time.time()
     frame_count = 0
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error al leer frame.")
-            break
-
-        workspace, dark_mask = detect_workspace(frame)
-        workspace_mask = create_workspace_mask(frame.shape, workspace, inset_px=WORKSPACE_INSET_PX)
-        warped, H, warp_w, warp_h = warp_workspace(frame, workspace)
-
-        color_data = process_colors(frame, workspace_mask)
-
-        # Convertir a coordenadas reales
-        color_data["orange_objects"] = attach_workspace_coordinates(color_data["orange_objects"], H, warp_h)
-        color_data["white_objects"] = attach_workspace_coordinates(color_data["white_objects"], H, warp_h)
-        color_data["blue_objects"] = attach_workspace_coordinates(color_data["blue_objects"], H, warp_h)
-
-        annotated = build_annotated_frame(frame, workspace, color_data)
-
-        frame_count += 1
-        if frame_count % 30 == 0:
-            elapsed = time.time() - start_time
-            fps = frame_count / elapsed
-            print(f"FPS: {fps:.2f}")
-
-            if workspace is not None:
-                corners = workspace["corners"]
-                print("Workspace corners (TL, TR, BR, BL):")
-                print(np.round(corners, 1))
-            else:
-                print("Workspace no detectado.")
-
-            print_object_list("Orange", color_data["orange_objects"])
-            print_object_list("Blue", color_data["blue_objects"])
-            print_object_list("White", color_data["white_objects"])
-            print("-----")
-
-        if SHOW_WINDOWS:
-            cv2.imshow("Camera Feed", frame)
-            cv2.imshow("Workspace Mask", dark_mask)
-            cv2.imshow("Workspace ROI Mask", workspace_mask)
-            cv2.imshow("Orange Mask", color_data["mask_orange"])
-            cv2.imshow("White Mask", color_data["mask_white"])
-            cv2.imshow("Blue Mask", color_data["mask_blue"])
-            cv2.imshow("Annotated Feed", annotated)
-
-            if warped is not None:
-                cv2.imshow("Warped Workspace", warped)
-
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Error al leer frame.")
                 break
 
-    cap.release()
-    if SHOW_WINDOWS:
-        cv2.destroyAllWindows()
+            workspace, dark_mask = detect_workspace(frame)
+            workspace_mask = create_workspace_mask(frame.shape, workspace, inset_px=WORKSPACE_INSET_PX)
+            warped, H, warp_w, warp_h = warp_workspace(frame, workspace)
+
+            color_data = process_colors(frame, workspace_mask)
+
+            color_data["orange_objects"] = attach_workspace_coordinates(color_data["orange_objects"], H, warp_h)
+            color_data["white_objects"] = attach_workspace_coordinates(color_data["white_objects"], H, warp_h)
+            color_data["blue_objects"] = attach_workspace_coordinates(color_data["blue_objects"], H, warp_h)
+
+            targets = build_target_list(color_data)
+            selected_target = select_target(
+                targets,
+                use_color_priority=USE_COLOR_PRIORITY,
+                color_priority=COLOR_PRIORITY
+            )
+
+            ik_result = None
+            if selected_target is not None:
+                ik_result = inverse_kinematics(selected_target["workspace_cm"], robot_config)
+
+            annotated = build_annotated_frame(frame, workspace, color_data, selected_target)
+
+            frame_count += 1
+            if frame_count % 30 == 0:
+                elapsed = time.time() - start_time
+                fps = frame_count / elapsed
+                print(f"FPS: {fps:.2f}")
+
+                if workspace is not None:
+                    corners = workspace["corners"]
+                    print("Workspace corners (TL, TR, BR, BL):")
+                    print(np.round(corners, 1))
+                else:
+                    print("Workspace no detectado.")
+
+                print_object_list("Orange", color_data["orange_objects"])
+                print_object_list("Blue", color_data["blue_objects"])
+                print_object_list("White", color_data["white_objects"])
+                print_selected_target(selected_target)
+
+                if ik_result is not None:
+                    print("IK placeholder:")
+                    print(f"  status: {ik_result['status']}")
+                    print(f"  target_xy_cm: {ik_result['target_xy_cm']}")
+
+                print("-----")
+
+            if SHOW_WINDOWS:
+                cv2.imshow("Camera Feed", frame)
+                cv2.imshow("Workspace Mask", dark_mask)
+                cv2.imshow("Workspace ROI Mask", workspace_mask)
+                cv2.imshow("Orange Mask", color_data["mask_orange"])
+                cv2.imshow("White Mask", color_data["mask_white"])
+                cv2.imshow("Blue Mask", color_data["mask_blue"])
+                cv2.imshow("Annotated Feed", annotated)
+
+                if warped is not None:
+                    cv2.imshow("Warped Workspace", warped)
+
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+
+    finally:
+        cap.release()
+        if SHOW_WINDOWS:
+            cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nEjecución interrumpida por el usuario.")
