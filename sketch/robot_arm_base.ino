@@ -1,15 +1,26 @@
 #include <Servo.h>
 
 // Servos
-Servo baseServo;     // pin 3
-Servo servoA1;       // pin 4
-Servo servoA2;       // pin 5
-Servo servoB;        // pin 6
-Servo wristA;        // pin 9
-Servo wristB;        // pin 10
-Servo gripper;       // pin 11
+Servo baseServo;   // pin 3
+Servo servoA1;     // pin 4
+Servo servoA2;     // pin 5
+Servo servoB;      // pin 6
+Servo wristA;      // pin 9
+Servo wristB;      // pin 10
+Servo gripper;     // pin 11
 
-int currentAngle = 90;
+// ========= CONFIGURACIÓN =========
+// Posición inicial "contraída" o de arranque.
+// Ajústala si ves que 60 fuerza demasiado algún joint.
+const int START_ANGLE = 60;
+
+// Centro deseado
+const int CENTER_ANGLE = 90;
+
+// Delay entre movimientos
+const int WAIT_MS = 2000;
+
+// =================================
 
 void attachAll() {
   baseServo.attach(3);
@@ -21,50 +32,57 @@ void attachAll() {
   gripper.attach(11);
 }
 
-void writeAllCoupled(int angle) {
-  baseServo.write(angle);
+void goToStartPosition() {
+  baseServo.write(START_ANGLE);
 
   // A1 y A2 acoplados
-  servoA1.write(angle);
-  servoA2.write(180 - angle);
+  servoA1.write(START_ANGLE);
+  servoA2.write(180 - START_ANGLE);
 
-  servoB.write(angle);
-  wristA.write(angle);
-  wristB.write(angle);
-  gripper.write(angle);
-}
-
-void moveAllSmooth(int targetAngle, int stepDelayMs) {
-  if (targetAngle > currentAngle) {
-    for (int a = currentAngle; a <= targetAngle; a++) {
-      writeAllCoupled(a);
-      delay(stepDelayMs);
-    }
-  } else {
-    for (int a = currentAngle; a >= targetAngle; a--) {
-      writeAllCoupled(a);
-      delay(stepDelayMs);
-    }
-  }
-
-  currentAngle = targetAngle;
+  servoB.write(START_ANGLE);
+  wristA.write(START_ANGLE);
+  wristB.write(START_ANGLE);
+  gripper.write(START_ANGLE);
 }
 
 void setup() {
   attachAll();
 
-  // Arranque seguro
-  writeAllCoupled(currentAngle);
+  // Llevar todo a posición inicial
+  goToStartPosition();
   delay(4000);
 }
 
 void loop() {
-  moveAllSmooth(110, 40);
-  delay(1500);
+  // 1) Base a 90
+  baseServo.write(CENTER_ANGLE);
+  delay(WAIT_MS);
 
-  moveAllSmooth(70, 40);
-  delay(1500);
+  // 2) A1 y A2 a 90 acoplados
+  servoA1.write(CENTER_ANGLE);
+  servoA2.write(180 - CENTER_ANGLE);
+  delay(WAIT_MS);
 
-  moveAllSmooth(90, 40);
-  delay(2000);
+  // 3) B a 90
+  servoB.write(CENTER_ANGLE);
+  delay(WAIT_MS);
+
+  // 4) Wrist A a 90
+  wristA.write(CENTER_ANGLE);
+  delay(WAIT_MS);
+
+  // 5) Wrist B a 90
+  wristB.write(CENTER_ANGLE);
+  delay(WAIT_MS);
+
+  // 6) Gripper a 90
+  gripper.write(CENTER_ANGLE);
+  delay(WAIT_MS);
+
+  // Espera extra al final
+  delay(3000);
+
+  // Repetir ciclo: volver a posición inicial
+  goToStartPosition();
+  delay(4000);
 }
