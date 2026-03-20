@@ -9,6 +9,8 @@ Servo wristA;        // pin 9
 Servo wristB;        // pin 10
 Servo gripper;       // pin 11
 
+int currentAngle = 90;
+
 void attachAll() {
   baseServo.attach(3);
   servoA1.attach(4);
@@ -19,42 +21,50 @@ void attachAll() {
   gripper.attach(11);
 }
 
-// Función para mover todo
-void moveAll(int angle) {
-
-  // Base
+void writeAllCoupled(int angle) {
   baseServo.write(angle);
 
-  // 🔥 A1 y A2 acoplados
+  // A1 y A2 acoplados
   servoA1.write(angle);
   servoA2.write(180 - angle);
 
-  // Resto
   servoB.write(angle);
   wristA.write(angle);
   wristB.write(angle);
   gripper.write(angle);
 }
 
+void moveAllSmooth(int targetAngle, int stepDelayMs) {
+  if (targetAngle > currentAngle) {
+    for (int a = currentAngle; a <= targetAngle; a++) {
+      writeAllCoupled(a);
+      delay(stepDelayMs);
+    }
+  } else {
+    for (int a = currentAngle; a >= targetAngle; a--) {
+      writeAllCoupled(a);
+      delay(stepDelayMs);
+    }
+  }
+
+  currentAngle = targetAngle;
+}
+
 void setup() {
   attachAll();
 
-  // Centro inicial
-  moveAll(90);
-  delay(3000);
+  // Arranque seguro
+  writeAllCoupled(currentAngle);
+  delay(4000);
 }
 
 void loop() {
+  moveAllSmooth(110, 40);
+  delay(1500);
 
-  // +20°
-  moveAll(110);
-  delay(3000);
+  moveAllSmooth(70, 40);
+  delay(1500);
 
-  // -20°
-  moveAll(70);
-  delay(3000);
-
-  // Centro
-  moveAll(90);
-  delay(3000);
+  moveAllSmooth(90, 40);
+  delay(2000);
 }
